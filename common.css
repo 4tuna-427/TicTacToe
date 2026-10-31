@@ -1,0 +1,33 @@
+@charset "utf-8";
+
+.title {
+    font-size: 1rem;
+}
+
+.board {
+    margin: 1rem 0;
+}
+
+.square-container {
+    --size: 200px;
+
+    display: grid;
+    /* 3列の幅を均等に設定 */
+    grid-template-columns: repeat(3, 1fr);
+    /* 3行の高さを均等に設定 */
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    width: var(--size);
+    height: var(--size);
+}
+
+.square {
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.square.deployed {
+    background-color: #e2ffde;
+}

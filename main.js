@@ -20,105 +20,95 @@ const GameStatus = Object.freeze({
     DRAW: 'draw',
 });
 
-let sceneName = '';
-let currentPlayerNo = 1;
-let board = ['', '', '', '', '', '', '', '', ''];
+let currentPlayer = 1;
+let boardData = Array(9).fill(null);
+let isGameOver = false;
 
-function resetBoard() {
-    board = ['', '', '', '', '', '', '', '', ''];
+const squares = document.querySelectorAll('[data-js-square]');
+const playerDisplay = document.getElementById('current-player');
 
-    const squares = document.querySelectorAll('.square');
-    squares.forEach((square) => {
-        square.classList.remove('deployed');
-        square.textContent = '';
-    });
-}
-
-function resetGame() {
-    currentPlayerNo = 1;
-    console.log(currentPlayerNo);
-    resetBoard();
-}
-
-function gameStart() {
-    resetGame();
-    turnStart();
-}
-
-function checkGameSet(board, playerNo) {
+function checkGameSet() {
     for (const [a, b, c] of WINNING_LINES) {
-        const squareA = board[a];
-        const squareB = board[b];
-        const squareC = board[c];
+        const squareA = boardData[a];
+        const squareB = boardData[b];
+        const squareC = boardData[c];
 
-        if (squareA !== '' && squareA === squareB && squareA === squareC) {
+        if (squareA !== null && squareA === squareB && squareA === squareC) {
             return GameStatus.GAMESET;
         }
     }
 
-    if (!board.includes('')) {
+    if (!boardData.includes(null)) {
         return GameStatus.DRAW;
     }
 
     return GameStatus.PROGRESS;
 }
 
-function markSquare(square) {
-    const squareIndex = square.dataset.index;
-    const isEmptySquare = square.classList.contains('square') && !square.classList.contains('deployed');
+function handleBoardClick(event) {
+    const square = event.target.closest('.square'); // クリックしたマス
+    // マス以外をクリックした場合は無視
+    if (!square || isGameOver) return;
 
-    if (isEmptySquare) {
-        document.removeEventListener('click', handleClickSquare);
+    const index = Number(square.dataset.index); // マスのindex
+    // 空きマス以外をクリックした場合は無視
+    if (boardData[index] !== null) return;
 
-        square.classList.add('deployed');
-        square.textContent = (currentPlayerNo === 1) ? '⭕' : '❌';
-        board[squareIndex] = currentPlayerNo;
+    boardData[index] = currentPlayer;
 
-        const gameStatus = checkGameSet(board, currentPlayerNo);
-        switch (gameStatus) {
-            case GameStatus.GAMESET:
-                alert('Win' + currentPlayerNo);
-                gameStart();
-                return;
+    const status = checkGameSet();
 
-            case GameStatus.DRAW:
-                alert('darw');
-                gameStart();
-                return;
-        }
-
-        const nextPlayerNo = (currentPlayerNo === 1) ? 2 : 1;
-        currentPlayerNo = nextPlayerNo;
-        turnStart();
+    // 勝利時
+    if (status === GameStatus.GAMESET) {
+        isGameOver = true;
+        updateUI();
+        setTimeout(() => alert(`プレイヤー ${currentPlayer} の勝ち！`), 10);
+        return;
     }
 
-    return false;
-}
-
-function handleClickSquare(event) {
-    const clickedSquare = event.target;
-    markSquare(clickedSquare);
-}
-
-// 引数で指定したプレイヤーのターンを開始
-function turnStart() {
-    const currentPlayerLabel = document.getElementById('current-player');
-    if (currentPlayerLabel) {
-        currentPlayerLabel.textContent = currentPlayerNo;
-    }
-    console.log('text updated., ', currentPlayerNo);
-
-    // 有効なマスをクリック時、マークする処理をセット
-    document.addEventListener('click', handleClickSquare);
-}
-
-// DOMの構造が完全に読み込まれた際のイベント
-document.addEventListener('DOMContentLoaded', () => {
-
-    const resetBtn = document.getElementById('reset-btn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', gameStart);
+    // 引き分け時
+    if (status === GameStatus.DRAW) {
+        isGameOver = true;
+        updateUI();
+        setTimeout(() => alert(`引き分け！`), 10);
+        return;
     }
 
-    gameStart();
-});
+    // 手番交代
+    currentPlayer = currentPlayer === 1 ? 2 : 1;
+    updateUI();
+}
+
+function updateUI() {
+    // 盤面
+    squares.forEach((square) => {
+        const squareIndex = square.dataset.index;
+        const player = boardData[squareIndex];
+        square.textContent = player === 1 ? '⭕' : player === 2 ? '❌' : '';
+        square.classList.toggle('deployed', player !== null);
+    });
+
+    // ターンメッセージ
+    if (playerDisplay) {
+        playerDisplay.textContent = currentPlayer;
+    }
+}
+
+function resetGame() {
+    currentPlayer = 1;
+    isGameOver = false;
+    boardData = Array(9).fill(null);
+    updateUI();
+}
+
+const boardContainer = document.querySelector('[data-js-board]');
+if (boardContainer) {
+    boardContainer.addEventListener('click', handleBoardClick);
+}
+
+const resetBtn = document.getElementById('reset-btn');
+if (resetBtn) {
+    resetBtn.addEventListener('click', resetGame);
+}
+
+resetGame();
